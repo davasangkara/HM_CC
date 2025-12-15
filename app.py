@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 model = joblib.load("model.pkl")
 scaler = joblib.load("scaler.pkl")
 feature_columns = joblib.load("feature_columns.pkl")
-num_imputer = joblib.load("num_imputer.pkl")
-cat_imputer = joblib.load("cat_imputer.pkl")
 cols_drop = joblib.load("cols_drop.pkl")
 
 st.set_page_config(page_title="Credit Risk Prediction", layout="wide")
@@ -40,31 +38,10 @@ if uploaded_file is not None:
     data_clean.drop(columns=cols_drop, inplace=True, errors="ignore")
 
     if "DAYS_EMPLOYED" in data_clean.columns:
-        data_clean["DAYS_EMPLOYED"].replace(365243, np.nan, inplace=True)
+        data_clean["DAYS_EMPLOYED"] = data_clean["DAYS_EMPLOYED"].replace(365243, 0)
 
-    numeric_data = data_clean.select_dtypes(include=["int64", "float64"]).values
-    n_required = num_imputer.n_features_in_
-
-    if numeric_data.shape[1] < n_required:
-        pad = np.full((numeric_data.shape[0], n_required - numeric_data.shape[1]), np.nan)
-        numeric_data = np.hstack([numeric_data, pad])
-
-    if numeric_data.shape[1] > n_required:
-        numeric_data = numeric_data[:, :n_required]
-
-    numeric_imputed = num_imputer.transform(numeric_data)
-
-    categorical_data = data_clean.select_dtypes(include=["object"]).values
-    if categorical_data.size == 0:
-        categorical_imputed = np.empty((len(data_clean), 0))
-    else:
-        categorical_imputed = cat_imputer.transform(categorical_data)
-
-    full_array = np.hstack([numeric_imputed, categorical_imputed])
-
-    data_encoded = pd.DataFrame(full_array)
-    data_encoded = data_encoded.reindex(columns=range(len(feature_columns)), fill_value=0)
-    data_encoded.columns = feature_columns
+    data_encoded = pd.get_dummies(data_clean, drop_first=True)
+    data_encoded = data_encoded.reindex(columns=feature_columns, fill_value=0)
     data_encoded.replace([np.inf, -np.inf], 0, inplace=True)
     data_encoded.fillna(0, inplace=True)
 
