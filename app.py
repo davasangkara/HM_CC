@@ -52,15 +52,15 @@ if uploaded_file is not None:
         if col not in data_clean.columns:
             data_clean[col] = np.nan
 
-    data_clean[num_cols] = num_imputer.transform(data_clean[num_cols])
-    data_clean[cat_cols] = cat_imputer.transform(data_clean[cat_cols])
+    data_clean[num_cols] = num_imputer.transform(data_clean[num_cols].values)
+    data_clean[cat_cols] = cat_imputer.transform(data_clean[cat_cols].values)
 
     data_encoded = pd.get_dummies(data_clean, columns=cat_cols, drop_first=True)
     data_encoded = data_encoded.reindex(columns=feature_columns, fill_value=0)
     data_encoded.replace([np.inf, -np.inf], 0, inplace=True)
     data_encoded.fillna(0, inplace=True)
 
-    data_scaled = scaler.transform(data_encoded)
+    data_scaled = scaler.transform(data_encoded.values)
     proba = model.predict_proba(data_scaled)[:, 1]
 
     result = pd.DataFrame({
